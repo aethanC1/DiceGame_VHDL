@@ -1,0 +1,113 @@
+
+library ieee;
+use ieee.std_logic_1164.all;
+entity controller is
+	port(clock: in std_logic;
+		  enter: in std_logic;
+		  reset: in std_logic;
+		  D7: in std_logic;
+		  D711: in std_logic;
+		  D2312: in std_logic;
+		  eq: in std_logic;
+		  roll: out std_logic:='0';
+		  sp: out std_logic:='0';
+		  win: out std_logic:='0';
+		  loss: out std_logic:='0');
+		  
+end entity;
+
+
+architecture behavioral of controller is
+	
+signal state, state_next: std_logic_vector(2 downto 0):="000";
+signal next_first,enter_flopped, first: std_logic:='1';
+signal next_roll, next_sp,next_win, next_loss: std_logic:='0';
+signal checkd711andfirst,checkeqandnotfirst: std_logic:='0';
+begin 
+	process(clock, reset, first, D7, D711, eq, D2312, enter_flopped)
+		begin 
+			if (reset='0') then 
+				state <= "000";
+				next_roll<='0';
+				next_sp<='0';
+				next_win<='0';
+				next_loss<='0';
+				next_first<='1';
+
+			elsif(clock'event and clock='1') then
+				enter_flopped<=enter;
+				state<=state_next;
+				roll<=next_roll;
+				sp<=next_sp;
+				win<=next_win;
+				loss<=next_loss;
+				first<=next_first;
+				
+				
+			end if;
+			case state is 
+				when "000"=>
+					if enter_flopped='0' then 
+						state_next <="001";
+						next_roll<='1';
+						next_sp<='0';
+					else
+						state_next<="000";
+						next_roll<='0';
+						next_sp<='0';
+						next_win<='0';
+						next_loss<='0';
+					end if;
+				
+				when "001" =>
+					next_sp<='0';
+					if enter_flopped='1' then 
+						state_next<="010";
+						next_roll<='0';
+					else 
+						state_next<="001";
+						next_roll<='1';
+					end if; 
+				
+				when "010"=>
+					checkd711andfirst<=d711 and first;
+					checkeqandnotfirst<=eq and not first;
+					if ((d711='1' and first='1') or (eq = '1' and first='0')) then 
+						state_next<="011";--win here?
+					elsif ((d2312='1' and first='1') or (d7='1' and first = '0')) then 
+						state_next<="100";-- loss here?
+					else 
+						state_next <="101";
+						next_first<='0';
+						if first = '1' then 
+							next_sp<='1';
+						elsif first='0' then 
+							next_sp<='0';
+						end if;
+					end if;
+				
+				when "011"=>
+					state_next<="011";
+					next_win<='1';--try with just regular win
+				
+				when "100"=>
+					state_next<="100";
+					next_loss<='1'; --try with regular loss
+					
+				when "101"=>
+				next_sp<='0';
+					if enter_flopped='0' then
+						state_next<="001";
+						next_roll<='1';
+					else
+						state_next<="101";
+					end if;
+				when others=>
+					state_next<="000";
+					next_roll<='0';
+					next_sp<='0';
+					next_win<='0';
+					next_loss<='0';
+		  end case;
+		end process;
+	end behavioral;
