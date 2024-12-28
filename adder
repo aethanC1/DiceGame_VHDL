@@ -1,0 +1,21 @@
+module adder (
+	
+    input [2:0] dataa,    // 3-bit input dataa
+    input [2:0] datab,    // 3-bit input datab
+    output [2:0] result,  // 3-bit result output (sum)
+    output cout           // Carry-out
+);
+
+    wire c1, c2;          // Intermediate carry wires
+
+    // Full adder for bit 0 with cin set to 0
+    assign {c1, result[0]} = dataa[0] + datab[0] + 1'b0;
+
+    // Full adder for bit 1
+    assign {c2, result[1]} = dataa[1] + datab[1] + c1;
+
+    // Full adder for bit 2
+    assign {cout, result[2]} = dataa[2] + datab[2] + c2;
+
+
+endmodule
